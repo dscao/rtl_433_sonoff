@@ -80,7 +80,20 @@ static int fineoffset_wh1050_callback(r_device *decoder, bitbuffer_t *bitbuffer)
         bitbuffer_extract_bytes(bitbuffer, 0, 7, br, 72);
     } else if (bits == 80 && preamble_byte == 0xff) {
         bitbuffer_extract_bytes(bitbuffer, 0, 8, br, 72);
-    } else {
+    } else if (bits == 78 && preamble_byte == 0x72) {
+        bitbuffer_extract_bytes(bitbuffer, 0, 6, br, 72);
+    } else if (bits == 77 && preamble_byte == 0xff) {
+        bitbuffer_extract_bytes(bitbuffer, 0, 5, br, 72);
+    } else if (bits == 76 && preamble_byte == 0xf5) {
+        bitbuffer_extract_bytes(bitbuffer, 0, 4, br, 72);
+    } else if (bits == 75 && preamble_byte == 0xeb) {
+        bitbuffer_extract_bytes(bitbuffer, 0, 3, br, 72);
+    } else if (bits == 74 && preamble_byte == 0xff) {
+        bitbuffer_extract_bytes(bitbuffer, 0, 2, br, 72);
+    } else if (bits == 73 && preamble_byte == 0x2d) {
+        bitbuffer_extract_bytes(bitbuffer, 0, 2, br, 72);
+    }
+    else {
         return DECODE_ABORT_LENGTH;
     }
 
