@@ -6,12 +6,10 @@ from __future__ import with_statement
 
 AP_DESCRIPTION="""
 Publish Home Assistant MQTT auto discovery topics for rtl_433 devices.
-
 rtl_433_mqtt_hass.py connects to MQTT and subscribes to the rtl_433
 event stream that is published to MQTT by rtl_433. The script publishes
 additional MQTT topics that can be used by Home Assistant to automatically
 discover and minimally configure new devices.
-
 The configuration topics published by this script tell Home Assistant
 what MQTT topics to subscribe to in order to receive the data published
 as device topics by MQTT.
@@ -21,74 +19,49 @@ AP_EPILOG="""
 It is strongly recommended to run rtl_433 with "-C si" and "-M newmodel".
 This script requires rtl_433 to publish both event messages and device
 messages.
-
 MQTT Username and Password can be set via the cmdline or passed in the
 environment: MQTT_USERNAME and MQTT_PASSWORD.
-
 Prerequisites:
-
 1. rtl_433 running separately publishing events and devices messages to MQTT.
-
 2. Python installation
 * Python 3.x preferred.
 * Needs Paho-MQTT https://pypi.python.org/pypi/paho-mqtt
-
   Debian/raspbian:  apt install python3-paho-mqtt
   Or
   pip install paho-mqtt
 * Optional for running as a daemon see PEP 3143 - Standard daemon process library
   (use Python 3.x or pip install python-daemon)
-
-
 Running:
-
 This script can run continually as a daemon, where it will publish
 a configuration topic for the device events sent to MQTT by rtl_433
 every 10 minutes.
-
 Alternatively if the rtl_433 devices in your environment change infrequently
 this script can use the MQTT retain flag to make the configuration topics
 persistent. The script will only need to be run when things change or if
 the MQTT server loses its retained messages.
-
 Getting rtl_433 devices back after Home Assistant restarts will happen
 more quickly if MQTT retain is enabled. Note however that definitions
 for any transitient devices/false positives will retained indefinitely.
-
 If your sensor values change infrequently and you prefer to write the most
 recent value even if not changed set -f to append "force_update = true" to
 all configs. This is useful if you're graphing the sensor data or want to
 alert on missing data.
-
 Suggestions:
-
 Running this script will cause a number of Home Assistant entities (sensors
 and binary sensors) to be created. These entities can linger for a while unless
 the topic is republished with an empty config string.  To avoid having to
 do a lot of clean up When running this initially or debugging, set this
 script to publish to a topic other than the one Home Assistant users (homeassistant).
-
 MQTT Explorer (http://http://mqtt-explorer.com/) is a very nice GUI for
 working with MQTT. It is free, cross platform, and OSS. The structured
 hierarchical view makes it easier to understand what rtl_433 is publishing
 and how this script works with Home Assistant.
-
 MQTT Explorer also makes it easy to publish an empty config topic to delete an
 entity from Home Assistant.
-
-
-Known Issues:
-
-Currently there is no white or black lists, so any device that rtl_433 receives
-including transients, false positives, will create a bunch of entities in
-Home Assistant.
-
 As of 2020-10, Home Assistant MQTT auto discovery doesn't currently support
 supplying "friendly name", and "area" key, so some configuration must be
 done in Home Assistant.
-
 There is a single global set of field mappings to Home Assistant meta data.
-
 """
 
 
@@ -127,7 +100,7 @@ mappings = {
             "device_class": "temperature",
             "name": "Temperature",
             "unit_of_measurement": "°C",
-            "value_template": "{{ value|float }}",
+            "value_template": "{{ value|float|round(1) }}",
             "state_class": "measurement"
         }
     },
@@ -138,7 +111,7 @@ mappings = {
             "device_class": "temperature",
             "name": "Temperature 1",
             "unit_of_measurement": "°C",
-            "value_template": "{{ value|float }}",
+            "value_template": "{{ value|float|round(1) }}",
             "state_class": "measurement"
         }
     },
@@ -149,7 +122,7 @@ mappings = {
             "device_class": "temperature",
             "name": "Temperature 2",
             "unit_of_measurement": "°C",
-            "value_template": "{{ value|float }}",
+            "value_template": "{{ value|float|round(1) }}",
             "state_class": "measurement"
         }
     },
@@ -160,7 +133,7 @@ mappings = {
             "device_class": "temperature",
             "name": "Temperature",
             "unit_of_measurement": "°F",
-            "value_template": "{{ value|float }}",
+            "value_template": "{{ value|float|round(1) }}",
             "state_class": "measurement"
         }
     },
@@ -173,7 +146,8 @@ mappings = {
             "name": "Battery",
             "unit_of_measurement": "%",
             "value_template": "{{ float(value) * 99 + 1 }}",
-            "state_class": "measurement"
+            "state_class": "measurement",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -208,7 +182,7 @@ mappings = {
             "device_class": "pressure",
             "name": "Pressure",
             "unit_of_measurement": "hPa",
-            "value_template": "{{ value|float }}",
+            "value_template": "{{ value|float|round(2) }}",
             "state_class": "measurement"
         }
     },
@@ -220,7 +194,7 @@ mappings = {
             "device_class": "pressure",
             "name": "Pressure",
             "unit_of_measurement": "kPa",
-            "value_template": "{{ value|float }}",
+            "value_template": "{{ value|float|round(3) }}",
             "state_class": "measurement"
         }
     },
@@ -229,6 +203,7 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "WS",
         "config": {
+            "device_class": "wind_speed",
             "name": "Wind Speed",
             "unit_of_measurement": "km/h",
             "value_template": "{{ value|float }}",
@@ -240,7 +215,7 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "WS",
         "config": {
-            "device_class": "weather",
+            "device_class": "wind_speed",
             "name": "Wind Speed",
             "unit_of_measurement": "km/h",
             "value_template": "{{ value|float }}",
@@ -252,9 +227,9 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "WS",
         "config": {
-            "device_class": "weather",
+            "device_class": "wind_speed",
             "name": "Wind Speed",
-            "unit_of_measurement": "mi/h",
+            "unit_of_measurement": "mph",
             "value_template": "{{ value|float }}",
             "state_class": "measurement"
         }
@@ -264,6 +239,7 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "WS",
         "config": {
+            "device_class": "wind_speed",
             "name": "Wind Average",
             "unit_of_measurement": "km/h",
             "value_template": "{{ (float(value|float) * 3.6) | round(2) }}",
@@ -275,9 +251,10 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "WS",
         "config": {
+            "device_class": "wind_speed",
             "name": "Wind Speed",
             "unit_of_measurement": "km/h",
-            "value_template": "{{ float(value|float) * 3.6 }}",
+            "value_template": "{{ (float(value|float) * 3.6) | round(2) }}",
             "state_class": "measurement"
         }
     },
@@ -286,7 +263,20 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "GS",
         "config": {
+            "device_class": "wind_speed",
             "name": "Gust Speed",
+            "unit_of_measurement": "km/h",
+            "value_template": "{{ value|float }}",
+            "state_class": "measurement"
+        }
+    },
+
+    "wind_max_km_h": {
+        "device_type": "sensor",
+        "object_suffix": "GS",
+        "config": {
+            "device_class": "wind_speed",
+            "name": "Wind max speed",
             "unit_of_measurement": "km/h",
             "value_template": "{{ value|float }}",
             "state_class": "measurement"
@@ -297,6 +287,7 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "GS",
         "config": {
+            "device_class": "wind_speed",
             "name": "Wind max",
             "unit_of_measurement": "km/h",
             "value_template": "{{ (float(value|float) * 3.6) | round(2) }}",
@@ -308,9 +299,10 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "GS",
         "config": {
+            "device_class": "wind_speed",
             "name": "Gust Speed",
             "unit_of_measurement": "km/h",
-            "value_template": "{{ float(value|float) * 3.6 }}",
+            "value_template": "{{ (float(value|float) * 3.6) | round(2) }}",
             "state_class": "measurement"
         }
     },
@@ -332,7 +324,7 @@ mappings = {
         "config": {
             "name": "Rain Total",
             "unit_of_measurement": "mm",
-            "value_template": "{{ value|float }}",
+            "value_template": "{{ value|float|round(2) }}",
             "state_class": "total_increasing"
         }
     },
@@ -377,7 +369,8 @@ mappings = {
             "device_class": "safety",
             "force_update": "true",
             "payload_on": "1",
-            "payload_off": "0"
+            "payload_off": "0",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -388,7 +381,8 @@ mappings = {
             "device_class": "safety",
             "force_update": "true",
             "payload_on": "1",
-            "payload_off": "0"
+            "payload_off": "0",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -399,7 +393,8 @@ mappings = {
             "device_class": "signal_strength",
             "unit_of_measurement": "dB",
             "value_template": "{{ value|float|round(2) }}",
-            "state_class": "measurement"
+            "state_class": "measurement",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -410,7 +405,8 @@ mappings = {
             "device_class": "signal_strength",
             "unit_of_measurement": "dB",
             "value_template": "{{ value|float|round(2) }}",
-            "state_class": "measurement"
+            "state_class": "measurement",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -421,7 +417,8 @@ mappings = {
             "device_class": "signal_strength",
             "unit_of_measurement": "dB",
             "value_template": "{{ value|float|round(2) }}",
-            "state_class": "measurement"
+            "state_class": "measurement",
+            "entity_category": "diagnostic"
         }
     },
 
@@ -448,13 +445,24 @@ mappings = {
         }
     },
 
+    "light_lux": {
+        "device_type": "sensor",
+        "object_suffix": "lux",
+        "config": {
+            "name": "Outside Luminance",
+            "device_class": "illuminance",
+            "unit_of_measurement": "lx",
+            "value_template": "{{ value|int }}",
+            "state_class": "measurement"
+        }
+    },
     "lux": {
         "device_type": "sensor",
         "object_suffix": "lux",
         "config": {
-            "device_class": "weather",
-            "name": "Outside Luminancee",
-            "unit_of_measurement": "lux",
+            "name": "Outside Luminance",
+            "device_class": "illuminance",
+            "unit_of_measurement": "lx",
             "value_template": "{{ value|int }}",
             "state_class": "measurement"
         }
@@ -464,7 +472,16 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "uv",
         "config": {
-            "device_class": "weather",
+            "name": "UV Raw",
+            "unit_of_measurement": "μw/cm²",
+            "value_template": "{{ value|int }}",
+            "state_class": "measurement"
+        }
+    },
+    "uvi": {
+        "device_type": "sensor",
+        "object_suffix": "uvi",
+        "config": {
             "name": "UV Index",
             "unit_of_measurement": "UV Index",
             "value_template": "{{ value|int }}",
@@ -476,6 +493,7 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "stdist",
         "config": {
+            "device_class": "distance",
             "name": "Lightning Distance",
             "unit_of_measurement": "mi",
             "value_template": "{{ value|int }}",
@@ -487,6 +505,7 @@ mappings = {
         "device_type": "sensor",
         "object_suffix": "stdist",
         "config": {
+            "device_class": "distance",
             "name": "Lightning Distance",
             "unit_of_measurement": "mi",
             "value_template": "{{ value|int }}",
@@ -503,6 +522,17 @@ mappings = {
             "state_class": "total_increasing"
         }
     },
+
+    "consumption_data": {
+        "device_type": "sensor",
+        "object_suffix": "consumption",
+        "config": {
+            "name": "SCM Consumption Value",
+            "value_template": "{{ value|int }}",
+            "state_class": "total_increasing",
+        }
+    },
+
 }
 
 
@@ -589,6 +619,9 @@ def publish_config(mqttc, topic, model, instance, mapping):
     if args.force_update:
         config["force_update"] = "true"
 
+    if args.expire_after:
+        config["expire_after"] = args.expire_after
+
     logging.debug(path + ":" + json.dumps(config))
 
     mqttc.publish(path, json.dumps(config), retain=args.retain)
@@ -612,6 +645,11 @@ def bridge_event_to_hass(mqttc, topicprefix, data):
     if not instance:
         # no unique device identifier
         logging.warning("No suitable identifier found for model: ", model)
+        return
+
+    if args.ids and id in data and data.get("id") not in args.ids:
+        # not in the safe list
+        logging.debug("Device (%s) is not in the desired list of device ids: [%s]" % (data["id"], ids))
         return
 
     # detect known attributes
@@ -642,6 +680,10 @@ def rtl_433_bridge():
 
     if args.user is not None:
         mqttc.username_pw_set(args.user, args.password)
+
+    if args.ca_cert is not None:
+        mqttc.tls_set(ca_certs=args.ca_cert)
+
     mqttc.on_connect = mqtt_connect
     mqttc.on_disconnect = mqtt_disconnect
     mqttc.on_message = mqtt_message
@@ -678,6 +720,7 @@ if __name__ == "__main__":
                         help="MQTT hostname to connect to (default: %(default)s)")
     parser.add_argument("-p", "--port", type=int, default=1883,
                         help="MQTT port (default: %(default)s)")
+    parser.add_argument("-c", "--ca_cert", type=str, help="MQTT TLS CA certificate path")
     parser.add_argument("-r", "--retain", action="store_true")
     parser.add_argument("-f", "--force_update", action="store_true",
                         help="Append 'force_update = true' to all configs.")
@@ -693,6 +736,12 @@ if __name__ == "__main__":
                         dest="discovery_interval",
                         default=600,
                         help="Interval to republish config topics in seconds (default: %(default)d)")
+    parser.add_argument("-x", "--expire-after", type=int,
+                        dest="expire_after",
+                        default=21600,
+                        help="Number of seconds with no updates after which the sensor becomes unavailable")
+    parser.add_argument("-I", "--ids", type=int, nargs="+",
+                        help="ID's of devices that will be discovered (omit for all)")
     args = parser.parse_args()
 
     if args.debug and args.quiet:
@@ -714,5 +763,11 @@ if __name__ == "__main__":
 
     if not args.user or not args.password:
         logging.warning("User or password is not set. Check credentials if subscriptions do not return messages.")
+
+    if args.ids:
+        ids = ', '.join(str(id) for id in args.ids)
+        logging.info("Only discovering devices with ids: [%s]" % ids)
+    else:
+        logging.info("Discovering all devices")
 
     run()
